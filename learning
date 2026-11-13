@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Belajar</title>
+<style>
+  body { font-family: system-ui, sans-serif; max-width: 480px; margin: 0 auto; padding: 16px; background: #f4f6fb; color: #1a2340; }
+  section { background: #fff; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+  h2 { margin-top: 0; }
+  button { padding: 8px 14px; border: 0; border-radius: 6px; background: #2740c9; color: #fff; cursor: pointer; }
+  input { padding: 8px; width: 100%; margin-bottom: 8px; box-sizing: border-box; }
+  #time { font-size: 56px; font-weight: bold; text-align: center; }
+  #card { font-size: 20px; text-align: center; padding: 24px 8px; border: 2px dashed #aab; border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<section>
+  <h2>Timer Fokus</h2>
+  <div id="time">25:00</div>
+  <button id="start">Mulai</button>
+  <button id="reset">Ulang</button>
+</section>
+
+<section>
+  <h2>Kartu Hafalan</h2>
+  <div id="card">Belum ada kartu</div>
+  <button id="next">Kartu berikutnya</button>
+  <hr>
+  <input id="q" placeholder="Pertanyaan">
+  <input id="a" placeholder="Jawaban">
+  <button id="add">Tambah kartu</button>
+</section>
+
+<script>
+  // ---- Timer ----
+  let left = 25 * 60, timer = null;
+  const time = document.getElementById('time');
+  function show() {
+    const m = String(Math.floor(left / 60)).padStart(2, '0');
+    const s = String(left % 60).padStart(2, '0');
+    time.textContent = m + ':' + s;
+  }
+  document.getElementById('start').onclick = function () {
+    if (timer) { clearInterval(timer); timer = null; this.textContent = 'Lanjut'; return; }
+    this.textContent = 'Jeda';
+    timer = setInterval(() => {
+      left--; show();
+      if (left <= 0) { clearInterval(timer); timer = null; alert('Waktu habis! Istirahat dulu.'); }
+    }, 1000);
+  };
+  document.getElementById('reset').onclick = () => {
+    clearInterval(timer); timer = null; left = 25 * 60; show();
+    document.getElementById('start').textContent = 'Mulai';
+  };
+
+  // ---- Kartu ----
+  let cards = JSON.parse(localStorage.getItem('cards') || '[]');
+  let i = 0, showAnswer = false;
+  const card = document.getElementById('card');
+  function showCard() {
+    if (!cards.length) { card.textContent = 'Belum ada kartu'; return; }
+    card.textContent = showAnswer ? cards[i].a : cards[i].q;
+  }
+  card.onclick = () => { showAnswer = !showAnswer; showCard(); };
+  document.getElementById('next').onclick = () => {
+    if (!cards.length) return;
+    i = (i + 1) % cards.length; showAnswer = false; showCard();
+  };
+  document.getElementById('add').onclick = () => {
+    const q = document.getElementById('q'), a = document.getElementById('a');
+    if (!q.value || !a.value) return;
+    cards.push({ q: q.value, a: a.value });
+    localStorage.setItem('cards', JSON.stringify(cards));
+    q.value = a.value = ''; showCard();
+  };
+  showCard();
+</script>
+</body>
+</html>
