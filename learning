@@ -1,526 +1,435 @@
-import random
 
 import streamlit as st
 
-st.set_page_config(page_title="Quiz Matematika Kelas 12", page_icon="📐", layout="centered")
+# ==============================
+# KONFIGURASI HALAMAN
+# ==============================
+st.set_page_config(
+    page_title="MathClass 12",
+    page_icon="📐",
+    layout="wide"
+)
 
-# ---------------------------------------------------------------------------
-# BANK SOAL
-# Tiap soal: topik, soal, opsi, jawaban (indeks opsi benar), konsep, langkah
-# Teks mendukung Markdown dan LaTeX ($...$). Tambah soal baru tinggal
-# menambahkan dictionary baru ke list SOAL.
-# ---------------------------------------------------------------------------
-SOAL = [
-    # ------------------------------ LIMIT ---------------------------------
-    {
-        "topik": "Limit",
-        "soal": r"Nilai $\displaystyle \lim_{x \to 2} \frac{x^2-4}{x-2}$ adalah ...",
-        "opsi": ["0", "2", "4", "8"],
-        "jawaban": 2,
-        "konsep": "Jika substitusi langsung menghasilkan $\\frac{0}{0}$, faktorkan pembilang lalu coret faktor yang sama.",
-        "langkah": [
-            "Substitusi $x=2$ → $\\frac{0}{0}$ (bentuk tak tentu), jadi harus difaktorkan.",
-            "Faktorkan: $x^2-4=(x-2)(x+2)$.",
-            "Coret $(x-2)$: $\\frac{(x-2)(x+2)}{x-2}=x+2$.",
-            "Substitusi $x=2$: $2+2=4$.",
-        ],
-    },
-    {
-        "topik": "Limit",
-        "soal": r"Nilai $\displaystyle \lim_{x \to \infty} \frac{3x^2+2x}{x^2-5}$ adalah ...",
-        "opsi": ["0", "2", "3", "$\\infty$"],
-        "jawaban": 2,
-        "konsep": "Untuk limit tak hingga bentuk pecahan polinom, bandingkan pangkat tertinggi pembilang dan penyebut.",
-        "langkah": [
-            "Pangkat tertinggi pembilang dan penyebut sama, yaitu $x^2$.",
-            "Bagi pembilang dan penyebut dengan $x^2$: $\\frac{3+\\frac{2}{x}}{1-\\frac{5}{x^2}}$.",
-            "Saat $x\\to\\infty$, $\\frac{2}{x}\\to0$ dan $\\frac{5}{x^2}\\to0$.",
-            "Hasil: $\\frac{3}{1}=3$ (sama dengan perbandingan koefisien $x^2$).",
-        ],
-    },
-    {
-        "topik": "Limit",
-        "soal": r"Nilai $\displaystyle \lim_{x \to 0} \frac{\sin 3x}{x}$ adalah ...",
-        "opsi": ["0", "1", "3", "$\\frac{1}{3}$"],
-        "jawaban": 2,
-        "konsep": "Limit trigonometri dasar: $\\lim_{x\\to0}\\frac{\\sin ax}{bx}=\\frac{a}{b}$.",
-        "langkah": [
-            "Gunakan rumus $\\lim_{x\\to0}\\frac{\\sin ax}{bx}=\\frac{a}{b}$.",
-            "Di sini $a=3$ dan $b=1$.",
-            "Jadi hasilnya $\\frac{3}{1}=3$.",
-        ],
-    },
-    # ------------------------------ TURUNAN -------------------------------
-    {
-        "topik": "Turunan",
-        "soal": r"Jika $f(x)=x^3-3x^2+2$, maka $f'(3)$ adalah ...",
-        "opsi": ["3", "6", "9", "12"],
-        "jawaban": 2,
-        "konsep": "Aturan pangkat: $\\frac{d}{dx}x^n=nx^{n-1}$.",
-        "langkah": [
-            "Turunkan tiap suku: $f'(x)=3x^2-6x$.",
-            "Substitusi $x=3$: $f'(3)=3(9)-6(3)$.",
-            "$=27-18=9$.",
-        ],
-    },
-    {
-        "topik": "Turunan",
-        "soal": r"Turunan pertama dari $f(x)=(2x+1)^4$ di $x=0$ adalah ...",
-        "opsi": ["4", "8", "16", "24"],
-        "jawaban": 1,
-        "konsep": "Aturan rantai: $\\frac{d}{dx}[u^n]=n\\,u^{n-1}\\cdot u'$.",
-        "langkah": [
-            "Misal $u=2x+1$, maka $u'=2$.",
-            "$f'(x)=4(2x+1)^3\\cdot 2=8(2x+1)^3$.",
-            "Substitusi $x=0$: $8(1)^3=8$.",
-        ],
-    },
-    {
-        "topik": "Turunan",
-        "soal": r"Nilai minimum fungsi $f(x)=x^2-6x+5$ adalah ...",
-        "opsi": ["$-4$", "$-3$", "$3$", "$5$"],
-        "jawaban": 0,
-        "konsep": "Nilai ekstrem terjadi di titik stasioner, yaitu saat $f'(x)=0$.",
-        "langkah": [
-            "Turunkan: $f'(x)=2x-6$.",
-            "Setel $f'(x)=0$ → $2x-6=0$ → $x=3$.",
-            "Karena $f''(x)=2>0$, titik tersebut adalah minimum.",
-            "Nilai minimum: $f(3)=9-18+5=-4$.",
-        ],
-    },
-    {
-        "topik": "Turunan",
-        "soal": r"Jika $f(x)=\sin 2x$, maka $f'(0)$ adalah ...",
-        "opsi": ["0", "1", "2", "$-2$"],
-        "jawaban": 2,
-        "konsep": "Turunan trigonometri dengan aturan rantai: $\\frac{d}{dx}\\sin(ax)=a\\cos(ax)$.",
-        "langkah": [
-            "$f'(x)=2\\cos 2x$.",
-            "Substitusi $x=0$: $2\\cos 0=2\\cdot1=2$.",
-        ],
-    },
-    # ------------------------------ INTEGRAL ------------------------------
-    {
-        "topik": "Integral",
-        "soal": r"Hasil dari $\displaystyle \int (6x^2+4x-3)\,dx$ adalah ...",
-        "opsi": [
-            "$12x+4+C$",
-            "$2x^3+2x^2-3x+C$",
-            "$6x^3+4x^2-3x+C$",
-            "$3x^3+2x^2-3x+C$",
-        ],
-        "jawaban": 1,
-        "konsep": "Aturan integral: $\\int x^n\\,dx=\\frac{x^{n+1}}{n+1}+C$.",
-        "langkah": [
-            "$\\int 6x^2\\,dx=\\frac{6}{3}x^3=2x^3$.",
-            "$\\int 4x\\,dx=\\frac{4}{2}x^2=2x^2$.",
-            "$\\int -3\\,dx=-3x$.",
-            "Gabungkan dan tambahkan konstanta: $2x^3+2x^2-3x+C$.",
-        ],
-    },
-    {
-        "topik": "Integral",
-        "soal": r"Nilai $\displaystyle \int_0^2 (3x^2+2)\,dx$ adalah ...",
-        "opsi": ["8", "10", "12", "14"],
-        "jawaban": 2,
-        "konsep": "Integral tentu: $\\int_a^b f(x)\\,dx=F(b)-F(a)$.",
-        "langkah": [
-            "Cari antiturunan: $F(x)=x^3+2x$.",
-            "$F(2)=8+4=12$ dan $F(0)=0$.",
-            "$F(2)-F(0)=12-0=12$.",
-        ],
-    },
-    {
-        "topik": "Integral",
-        "soal": r"Luas daerah yang dibatasi kurva $y=x^2$, sumbu $x$, dan garis $x=3$ adalah ... satuan luas.",
-        "opsi": ["3", "6", "9", "27"],
-        "jawaban": 2,
-        "konsep": "Luas di bawah kurva (di atas sumbu $x$) $=\\int_a^b f(x)\\,dx$.",
-        "langkah": [
-            "Batas integrasi: dari $x=0$ (titik potong kurva dengan sumbu $x$) sampai $x=3$.",
-            "$L=\\int_0^3 x^2\\,dx=\\left[\\frac{x^3}{3}\\right]_0^3$.",
-            "$=\\frac{27}{3}-0=9$ satuan luas.",
-        ],
-    },
-    {
-        "topik": "Integral",
-        "soal": r"Hasil dari $\displaystyle \int 2x(x^2+1)^3\,dx$ adalah ...",
-        "opsi": [
-            "$\\frac{(x^2+1)^4}{4}+C$",
-            "$\\frac{(x^2+1)^4}{2}+C$",
-            "$(x^2+1)^4+C$",
-            "$\\frac{(x^2+1)^3}{3}+C$",
-        ],
-        "jawaban": 0,
-        "konsep": "Integral substitusi: pilih $u$ sehingga $du$ muncul di integran.",
-        "langkah": [
-            "Misal $u=x^2+1$, maka $du=2x\\,dx$.",
-            "Integral menjadi $\\int u^3\\,du=\\frac{u^4}{4}+C$.",
-            "Kembalikan $u$: $\\frac{(x^2+1)^4}{4}+C$.",
-        ],
-    },
-    # ------------------------------ PELUANG -------------------------------
-    {
-        "topik": "Peluang",
-        "soal": "Dua dadu dilempar bersamaan. Peluang jumlah mata dadu sama dengan 7 adalah ...",
-        "opsi": ["$\\frac{1}{12}$", "$\\frac{1}{6}$", "$\\frac{1}{4}$", "$\\frac{7}{36}$"],
-        "jawaban": 1,
-        "konsep": "$P(A)=\\frac{n(A)}{n(S)}$.",
-        "langkah": [
-            "Ruang sampel: $n(S)=6\\times6=36$.",
-            "Pasangan berjumlah 7: (1,6), (2,5), (3,4), (4,3), (5,2), (6,1) → $n(A)=6$.",
-            "$P(A)=\\frac{6}{36}=\\frac{1}{6}$.",
-        ],
-    },
-    {
-        "topik": "Peluang",
-        "soal": "Dari 8 siswa akan dipilih 3 orang untuk menjadi pengurus yang tidak dibedakan jabatannya. Banyak cara memilih adalah ...",
-        "opsi": ["24", "56", "112", "336"],
-        "jawaban": 1,
-        "konsep": "Urutan tidak penting → gunakan kombinasi $C(n,r)=\\frac{n!}{r!(n-r)!}$.",
-        "langkah": [
-            "Jabatan tidak dibedakan, jadi ini kombinasi.",
-            "$C(8,3)=\\frac{8!}{3!\\,5!}=\\frac{8\\times7\\times6}{3\\times2\\times1}$.",
-            "$=\\frac{336}{6}=56$ cara.",
-        ],
-    },
-    {
-        "topik": "Peluang",
-        "soal": "Sebuah kotak berisi 5 bola merah dan 3 bola biru. Diambil 2 bola sekaligus. Peluang keduanya merah adalah ...",
-        "opsi": ["$\\frac{5}{14}$", "$\\frac{5}{8}$", "$\\frac{25}{64}$", "$\\frac{3}{14}$"],
-        "jawaban": 0,
-        "konsep": "Pengambilan sekaligus → kombinasi. $P=\\frac{C(\\text{merah},2)}{C(\\text{total},2)}$.",
-        "langkah": [
-            "Total bola 8: $n(S)=C(8,2)=\\frac{8\\times7}{2}=28$.",
-            "Dua bola merah: $n(A)=C(5,2)=\\frac{5\\times4}{2}=10$.",
-            "$P(A)=\\frac{10}{28}=\\frac{5}{14}$.",
-        ],
-    },
-    {
-        "topik": "Peluang",
-        "soal": "Tiga koin dilempar bersamaan sebanyak 80 kali. Frekuensi harapan muncul tepat 2 sisi gambar adalah ...",
-        "opsi": ["20", "30", "40", "60"],
-        "jawaban": 1,
-        "konsep": "Frekuensi harapan $F_h=P(A)\\times n$.",
-        "langkah": [
-            "Ruang sampel 3 koin: $2^3=8$.",
-            "Tepat 2 gambar: GGA, GAG, AGG → 3 kejadian, sehingga $P=\\frac{3}{8}$.",
-            "$F_h=\\frac{3}{8}\\times80=30$.",
-        ],
-    },
-    # ------------------------------ STATISTIKA ----------------------------
-    {
-        "topik": "Statistika",
-        "soal": "Data: 60, 70, 80, 90, 100. Ragam (varians) data tersebut adalah ...",
-        "opsi": ["100", "150", "200", "250"],
-        "jawaban": 2,
-        "konsep": "Ragam populasi: $s^2=\\frac{\\sum (x_i-\\bar{x})^2}{n}$.",
-        "langkah": [
-            "Rata-rata: $\\bar{x}=\\frac{60+70+80+90+100}{5}=80$.",
-            "Selisih terhadap rata-rata: $-20,\\,-10,\\,0,\\,10,\\,20$.",
-            "Kuadrat selisih: $400,\\,100,\\,0,\\,100,\\,400$ → jumlah $=1000$.",
-            "$s^2=\\frac{1000}{5}=200$.",
-        ],
-    },
-    {
-        "topik": "Statistika",
-        "soal": "Median dari data 3, 5, 7, 7, 8, 9, 12 adalah ...",
-        "opsi": ["5", "7", "8", "9"],
-        "jawaban": 1,
-        "konsep": "Median adalah nilai tengah data yang sudah terurut.",
-        "langkah": [
-            "Data sudah terurut dan $n=7$ (ganjil).",
-            "Posisi median: $\\frac{n+1}{2}=4$.",
-            "Data ke-4 adalah $7$.",
-        ],
-    },
-    {
-        "topik": "Statistika",
-        "soal": "Rata-rata nilai 10 siswa adalah 70 dan rata-rata nilai 20 siswa lainnya adalah 85. Rata-rata gabungan 30 siswa tersebut adalah ...",
-        "opsi": ["77,5", "78", "80", "82,5"],
-        "jawaban": 2,
-        "konsep": "Rata-rata gabungan $=\\frac{n_1\\bar{x}_1+n_2\\bar{x}_2}{n_1+n_2}$.",
-        "langkah": [
-            "Jumlah kelompok 1: $10\\times70=700$.",
-            "Jumlah kelompok 2: $20\\times85=1700$.",
-            "Rata-rata gabungan: $\\frac{700+1700}{30}=\\frac{2400}{30}=80$.",
-        ],
-    },
-    # ------------------------------ MATRIKS -------------------------------
-    {
-        "topik": "Matriks",
-        "soal": r"Determinan matriks $A=\begin{pmatrix}2&3\\1&4\end{pmatrix}$ adalah ...",
-        "opsi": ["5", "8", "11", "$-5$"],
-        "jawaban": 0,
-        "konsep": "Untuk $\\begin{pmatrix}a&b\\\\c&d\\end{pmatrix}$, determinan $=ad-bc$.",
-        "langkah": [
-            "Diagonal utama: $2\\times4=8$.",
-            "Diagonal samping: $3\\times1=3$.",
-            "$\\det A=8-3=5$.",
-        ],
-    },
-    {
-        "topik": "Matriks",
-        "soal": r"Jika $A=\begin{pmatrix}1&2\\3&4\end{pmatrix}$ dan $B=\begin{pmatrix}0&1\\1&0\end{pmatrix}$, maka $AB$ adalah ...",
-        "opsi": [
-            r"$\begin{pmatrix}2&1\\4&3\end{pmatrix}$",
-            r"$\begin{pmatrix}1&2\\3&4\end{pmatrix}$",
-            r"$\begin{pmatrix}0&2\\3&0\end{pmatrix}$",
-            r"$\begin{pmatrix}3&4\\1&2\end{pmatrix}$",
-        ],
-        "jawaban": 0,
-        "konsep": "Perkalian matriks: baris matriks pertama dikali kolom matriks kedua.",
-        "langkah": [
-            "Baris 1 × kolom 1: $1\\cdot0+2\\cdot1=2$.",
-            "Baris 1 × kolom 2: $1\\cdot1+2\\cdot0=1$.",
-            "Baris 2 × kolom 1: $3\\cdot0+4\\cdot1=4$.",
-            "Baris 2 × kolom 2: $3\\cdot1+4\\cdot0=3$.",
-            "Jadi $AB=\\begin{pmatrix}2&1\\\\4&3\\end{pmatrix}$.",
-        ],
-    },
-    {
-        "topik": "Matriks",
-        "soal": r"Invers dari matriks $A=\begin{pmatrix}3&1\\5&2\end{pmatrix}$ adalah ...",
-        "opsi": [
-            r"$\begin{pmatrix}2&-1\\-5&3\end{pmatrix}$",
-            r"$\begin{pmatrix}2&1\\5&3\end{pmatrix}$",
-            r"$\begin{pmatrix}-2&1\\5&-3\end{pmatrix}$",
-            r"$\begin{pmatrix}3&-1\\-5&2\end{pmatrix}$",
-        ],
-        "jawaban": 0,
-        "konsep": "$A^{-1}=\\frac{1}{ad-bc}\\begin{pmatrix}d&-b\\\\-c&a\\end{pmatrix}$.",
-        "langkah": [
-            "Determinan: $3\\cdot2-1\\cdot5=6-5=1$.",
-            "Tukar diagonal utama, ubah tanda diagonal samping: $\\begin{pmatrix}2&-1\\\\-5&3\\end{pmatrix}$.",
-            "Kalikan dengan $\\frac{1}{1}=1$ → hasil tetap.",
-        ],
-    },
-    # ------------------------- BARISAN DAN DERET --------------------------
-    {
-        "topik": "Barisan & Deret",
-        "soal": "Pada barisan aritmetika diketahui $U_3=7$ dan $U_7=19$. Suku ke-10 barisan tersebut adalah ...",
-        "opsi": ["25", "28", "31", "34"],
-        "jawaban": 1,
-        "konsep": "Barisan aritmetika: $U_n=a+(n-1)b$.",
-        "langkah": [
-            "$U_7-U_3=4b=19-7=12$ → $b=3$.",
-            "$U_3=a+2b=7$ → $a=7-6=1$.",
-            "$U_{10}=1+9\\cdot3=28$.",
-        ],
-    },
-    {
-        "topik": "Barisan & Deret",
-        "soal": "Jumlah 6 suku pertama deret geometri $3+6+12+\\dots$ adalah ...",
-        "opsi": ["93", "126", "189", "192"],
-        "jawaban": 2,
-        "konsep": "Deret geometri ($r>1$): $S_n=\\frac{a(r^n-1)}{r-1}$.",
-        "langkah": [
-            "$a=3$ dan $r=\\frac{6}{3}=2$.",
-            "$S_6=\\frac{3(2^6-1)}{2-1}=3\\times63$.",
-            "$=189$.",
-        ],
-    },
-    {
-        "topik": "Barisan & Deret",
-        "soal": "Jumlah tak hingga deret geometri $8+4+2+1+\\dots$ adalah ...",
-        "opsi": ["12", "14", "16", "$\\infty$"],
-        "jawaban": 2,
-        "konsep": "Deret geometri tak hingga konvergen jika $|r|<1$, dengan $S_\\infty=\\frac{a}{1-r}$.",
-        "langkah": [
-            "$a=8$ dan $r=\\frac{4}{8}=\\frac{1}{2}$.",
-            "Karena $|r|<1$, deret konvergen.",
-            "$S_\\infty=\\frac{8}{1-\\frac{1}{2}}=\\frac{8}{\\frac{1}{2}}=16$.",
-        ],
-    },
-]
+# ==============================
+# DESAIN CSS
+# ==============================
+st.markdown("""
+<style>
+.stApp {
+    background-color: #f4f7fb;
+}
 
-SEMUA_TOPIK = sorted({s["topik"] for s in SOAL})
-HURUF = ["A", "B", "C", "D", "E"]
+.main-title {
+    font-size: 38px;
+    font-weight: 800;
+    color: #173b67;
+}
 
+.subtitle {
+    color: #64748b;
+    font-size: 16px;
+}
 
-# ---------------------------------------------------------------------------
-# STATE
-# ---------------------------------------------------------------------------
-def mulai_kuis(topik_dipilih, jumlah, acak_opsi):
-    pool = [i for i, s in enumerate(SOAL) if s["topik"] in topik_dipilih]
-    random.shuffle(pool)
-    pool = pool[:jumlah]
+.question-box {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 15px;
+}
 
-    urutan_opsi = {}
-    for i in pool:
-        idx = list(range(len(SOAL[i]["opsi"])))
-        if acak_opsi:
-            random.shuffle(idx)
-        urutan_opsi[i] = idx
+.answer-box {
+    background: #e8f5e9;
+    padding: 20px;
+    border-radius: 12px;
+    border-left: 5px solid #2e9d50;
+}
 
-    st.session_state.update(
+.stButton button {
+    border-radius: 10px;
+    font-weight: bold;
+    min-height: 42px;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# ==============================
+# DATABASE SOAL
+# ==============================
+soal = {
+    "Limit Fungsi": [
         {
-            "fase": "kuis",
-            "soal_ids": pool,
-            "urutan_opsi": urutan_opsi,
-            "posisi": 0,
-            "jawaban_user": {},  # id soal -> indeks opsi asli yang dipilih
-            "sudah_dijawab": set(),
+            "pertanyaan": "Nilai dari lim x→2 (x² - 4)/(x - 2) adalah ...",
+            "pilihan": ["A. 2", "B. 4", "C. 6", "D. 8", "E. 10"],
+            "jawaban": "B. 4",
+            "pembahasan": """
+            Faktorkan pembilang:
+
+            x² - 4 = (x - 2)(x + 2)
+
+            Maka:
+
+            (x² - 4)/(x - 2) = x + 2
+
+            Substitusi x = 2:
+
+            2 + 2 = 4
+            """
+        },
+        {
+            "pertanyaan": "Nilai dari lim x→3 (x² - 9)/(x - 3) adalah ...",
+            "pilihan": ["A. 3", "B. 6", "C. 9", "D. 12", "E. 15"],
+            "jawaban": "B. 6",
+            "pembahasan": """
+            Faktorkan:
+
+            x² - 9 = (x - 3)(x + 3)
+
+            Sederhanakan menjadi x + 3.
+
+            Substitusi x = 3:
+
+            3 + 3 = 6
+            """
         }
-    )
+    ],
 
+    "Turunan Fungsi": [
+        {
+            "pertanyaan": "Turunan pertama dari f(x) = 3x² + 5x - 7 adalah ...",
+            "pilihan": [
+                "A. 3x + 5",
+                "B. 6x + 5",
+                "C. 6x - 5",
+                "D. 3x² + 5",
+                "E. 6x + 7"
+            ],
+            "jawaban": "B. 6x + 5",
+            "pembahasan": """
+            Gunakan aturan turunan:
 
-def reset():
-    for k in ["fase", "soal_ids", "urutan_opsi", "posisi", "jawaban_user", "sudah_dijawab"]:
-        st.session_state.pop(k, None)
-    st.session_state["fase"] = "menu"
+            Jika f(x) = axⁿ, maka f'(x) = anxⁿ⁻¹.
 
+            Turunkan setiap suku:
 
-if "fase" not in st.session_state:
-    st.session_state["fase"] = "menu"
+            3x² → 6x
+            5x → 5
+            -7 → 0
 
+            Jadi f'(x) = 6x + 5.
+            """
+        },
+        {
+            "pertanyaan": "Jika f(x) = x³ - 4x² + 2x, maka f'(x) adalah ...",
+            "pilihan": [
+                "A. 3x² - 8x + 2",
+                "B. 3x² - 4x + 2",
+                "C. x² - 8x + 2",
+                "D. 3x² + 8x + 2",
+                "E. 3x - 8"
+            ],
+            "jawaban": "A. 3x² - 8x + 2",
+            "pembahasan": """
+            Turunkan setiap suku:
 
-# ---------------------------------------------------------------------------
-# TAMPILAN
-# ---------------------------------------------------------------------------
-def tampil_pembahasan(s):
-    st.markdown("#### 📖 Cara menjawab")
-    st.info(f"**Konsep kunci:** {s['konsep']}")
-    for n, langkah in enumerate(s["langkah"], start=1):
-        st.markdown(f"**Langkah {n}.** {langkah}")
-    benar = s["opsi"][s["jawaban"]]
-    st.success(f"Jawaban benar: {benar}")
+            x³ → 3x²
+            -4x² → -8x
+            2x → 2
 
+            Jadi:
 
-def halaman_menu():
-    st.title("📐 Quiz Matematika Kelas 12 SMA")
-    st.write(
-        "Latihan soal pilihan ganda dengan **pembahasan langkah demi langkah** "
-        "setelah kamu menjawab."
-    )
+            f'(x) = 3x² - 8x + 2
+            """
+        }
+    ],
 
-    topik = st.multiselect("Pilih topik", SEMUA_TOPIK, default=SEMUA_TOPIK)
-    tersedia = sum(1 for s in SOAL if s["topik"] in topik)
+    "Integral": [
+        {
+            "pertanyaan": "Hasil integral ∫ 2x dx adalah ...",
+            "pilihan": [
+                "A. x + C",
+                "B. x² + C",
+                "C. 2x² + C",
+                "D. x³ + C",
+                "E. 2 + C"
+            ],
+            "jawaban": "B. x² + C",
+            "pembahasan": """
+            Gunakan rumus integral:
 
-    if tersedia == 0:
-        st.warning("Pilih minimal satu topik.")
-        return
+            ∫ axⁿ dx = (a/(n+1))xⁿ⁺¹ + C
 
-    jumlah = st.slider(
-        "Jumlah soal",
-        min_value=1,
-        max_value=tersedia,
-        value=min(10, tersedia),
-    ) if tersedia > 1 else 1
-    acak_opsi = st.checkbox("Acak urutan pilihan jawaban", value=True)
+            Maka:
 
-    if st.button("🚀 Mulai Kuis", type="primary", use_container_width=True):
-        mulai_kuis(topik, jumlah, acak_opsi)
-        st.rerun()
+            ∫ 2x dx = 2 × x²/2 + C
 
+            Hasilnya adalah x² + C.
+            """
+        },
+        {
+            "pertanyaan": "Hasil dari ∫ 3x² dx adalah ...",
+            "pilihan": [
+                "A. x³ + C",
+                "B. 3x³ + C",
+                "C. 6x + C",
+                "D. x² + C",
+                "E. 3x + C"
+            ],
+            "jawaban": "A. x³ + C",
+            "pembahasan": """
+            ∫ 3x² dx
 
-def halaman_kuis():
-    ids = st.session_state["soal_ids"]
-    pos = st.session_state["posisi"]
-    total = len(ids)
-    sid = ids[pos]
-    s = SOAL[sid]
-    urutan = st.session_state["urutan_opsi"][sid]
-    sudah = sid in st.session_state["sudah_dijawab"]
+            = 3 × (x³/3) + C
 
-    st.progress(pos / total, text=f"Soal {pos + 1} dari {total}")
-    st.caption(f"Topik: {s['topik']}")
-    st.markdown(f"### {s['soal']}")
+            = x³ + C
+            """
+        }
+    ],
 
-    pilihan_label = [f"{HURUF[i]}. {s['opsi'][asli]}" for i, asli in enumerate(urutan)]
-    pilihan = st.radio(
-        "Pilih jawaban:",
-        options=list(range(len(urutan))),
-        format_func=lambda i: pilihan_label[i],
-        index=None,
-        key=f"radio_{sid}",
-        disabled=sudah,
-    )
+    "Peluang": [
+        {
+            "pertanyaan": "Sebuah dadu dilempar sekali. Peluang muncul angka genap adalah ...",
+            "pilihan": [
+                "A. 1/6",
+                "B. 1/3",
+                "C. 1/2",
+                "D. 2/3",
+                "E. 5/6"
+            ],
+            "jawaban": "C. 1/2",
+            "pembahasan": """
+            Ruang sampel dadu:
 
-    if not sudah:
-        if st.button("✅ Periksa Jawaban", type="primary", disabled=pilihan is None):
-            st.session_state["jawaban_user"][sid] = urutan[pilihan]
-            st.session_state["sudah_dijawab"].add(sid)
-            st.rerun()
-    else:
-        dipilih = st.session_state["jawaban_user"][sid]
-        if dipilih == s["jawaban"]:
-            st.success("🎉 Benar!")
-        else:
-            st.error("❌ Belum tepat.")
-        tampil_pembahasan(s)
+            {1, 2, 3, 4, 5, 6}
 
-        terakhir = pos == total - 1
-        label = "🏁 Lihat Hasil" if terakhir else "➡️ Soal Berikutnya"
-        if st.button(label, type="primary"):
-            if terakhir:
-                st.session_state["fase"] = "hasil"
-            else:
-                st.session_state["posisi"] += 1
-            st.rerun()
+            Angka genap:
+
+            {2, 4, 6}
+
+            Banyak kejadian = 3
+            Banyak ruang sampel = 6
+
+            P(A) = 3/6 = 1/2
+            """
+        },
+        {
+            "pertanyaan": "Dalam sebuah kantong terdapat 3 bola merah dan 2 bola biru. Peluang mengambil bola biru adalah ...",
+            "pilihan": [
+                "A. 1/5",
+                "B. 2/5",
+                "C. 3/5",
+                "D. 4/5",
+                "E. 1/2"
+            ],
+            "jawaban": "B. 2/5",
+            "pembahasan": """
+            Jumlah seluruh bola = 3 + 2 = 5
+
+            Jumlah bola biru = 2
+
+            P(biru) = 2/5
+            """
+        }
+    ]
+}
+
+# ==============================
+# HEADER
+# ==============================
+st.markdown('<div class="main-title">📐 MathClass 12</div>',
+            unsafe_allow_html=True)
+
+st.markdown(
+    '<div class="subtitle">Platform belajar dan latihan matematika SMA kelas XII</div>',
+    unsafe_allow_html=True
+)
+
+st.divider()
+
+# ==============================
+# SIDEBAR
+# ==============================
+st.sidebar.title("📚 Menu Belajar")
+
+menu = st.sidebar.radio(
+    "Pilih Materi",
+    ["Beranda"] + list(soal.keys())
+)
+
+st.sidebar.divider()
+st.sidebar.info("Belajar matematika sedikit demi sedikit setiap hari!")
+
+# ==============================
+# BERANDA
+# ==============================
+if menu == "Beranda":
+
+    st.subheader("Selamat Datang! 👋")
+
+    st.write("""
+    Selamat datang di MathClass 12.
+
+    Website ini membantu kamu mempelajari matematika kelas 12
+    melalui latihan soal, jawaban, dan pembahasan.
+    """)
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        st.metric("Materi", len(soal))
+
+    with col2:
+        total = sum(len(x) for x in soal.values())
+        st.metric("Total Soal", total)
+
+    with col3:
+        st.metric("Jenjang", "Kelas XII")
 
     st.divider()
-    if st.button("⬅️ Keluar ke menu"):
-        reset()
-        st.rerun()
 
+    st.subheader("📖 Daftar Materi")
 
-def halaman_hasil():
-    ids = st.session_state["soal_ids"]
-    jawaban = st.session_state["jawaban_user"]
-    benar = sum(1 for i in ids if jawaban.get(i) == SOAL[i]["jawaban"])
-    total = len(ids)
-    nilai = round(benar / total * 100)
+    for materi, daftar in soal.items():
+        with st.expander(materi):
+            st.write(f"Jumlah latihan: {len(daftar)} soal")
+            st.write("Pilih materi melalui menu di sebelah kiri.")
 
-    st.title("🏁 Hasil Kuis")
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Benar", benar)
-    c2.metric("Salah", total - benar)
-    c3.metric("Nilai", nilai)
-
-    if nilai >= 80:
-        st.balloons()
-        st.success("Mantap! Pemahamanmu sudah sangat baik.")
-    elif nilai >= 60:
-        st.info("Lumayan! Pelajari lagi pembahasan soal yang salah.")
-    else:
-        st.warning("Jangan menyerah, baca pembahasannya lalu coba lagi.")
-
-    # Rekap per topik
-    st.markdown("#### Rekap per topik")
-    rekap = {}
-    for i in ids:
-        t = SOAL[i]["topik"]
-        rekap.setdefault(t, [0, 0])
-        rekap[t][1] += 1
-        if jawaban.get(i) == SOAL[i]["jawaban"]:
-            rekap[t][0] += 1
-    for t, (b, n) in rekap.items():
-        st.write(f"**{t}**: {b}/{n}")
-        st.progress(b / n)
-
-    st.markdown("#### Tinjau jawaban")
-    for no, i in enumerate(ids, start=1):
-        s = SOAL[i]
-        ok = jawaban.get(i) == s["jawaban"]
-        with st.expander(f"{'✅' if ok else '❌'} Soal {no} — {s['topik']}"):
-            st.markdown(s["soal"])
-            st.markdown(f"**Jawabanmu:** {s['opsi'][jawaban[i]]}")
-            tampil_pembahasan(s)
-
-    col1, col2 = st.columns(2)
-    if col1.button("🔁 Ulangi dengan soal baru", use_container_width=True):
-        reset()
-        st.rerun()
-    if col2.button("🏠 Menu utama", use_container_width=True):
-        reset()
-        st.rerun()
-
-
-fase = st.session_state["fase"]
-if fase == "menu":
-    halaman_menu()
-elif fase == "kuis":
-    halaman_kuis()
+# ==============================
+# HALAMAN QUIZ
+# ==============================
 else:
-    halaman_hasil()
+
+    st.subheader(f"📘 Materi: {menu}")
+
+    daftar_soal = soal[menu]
+
+    # Session state
+    key = f"nomor_{menu}"
+    answer_key = f"jawaban_{menu}"
+    checked_key = f"checked_{menu}"
+    score_key = f"score_{menu}"
+
+    if key not in st.session_state:
+        st.session_state[key] = 0
+
+    if answer_key not in st.session_state:
+        st.session_state[answer_key] = {}
+
+    if checked_key not in st.session_state:
+        st.session_state[checked_key] = {}
+
+    if score_key not in st.session_state:
+        st.session_state[score_key] = 0
+
+    nomor = st.session_state[key]
+    current = daftar_soal[nomor]
+
+    st.progress((nomor + 1) / len(daftar_soal))
+
+    st.caption(
+        f"Soal {nomor + 1} dari {len(daftar_soal)}"
+    )
+
+    st.markdown(
+        f"""
+        <div class="question-box">
+            <h3>📝 Pertanyaan</h3>
+            <p style="font-size:19px;color:#173b67;">
+                {current['pertanyaan']}
+            </p>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    # Pilihan jawaban
+    selected = st.radio(
+        "Pilih jawaban yang menurutmu benar:",
+        current["pilihan"],
+        index=(
+            current["pilihan"].index(
+                st.session_state[answer_key][nomor]
+            )
+            if nomor in st.session_state[answer_key]
+            else None
+        ),
+        key=f"radio_{menu}_{nomor}"
+    )
+
+    st.session_state[answer_key][nomor] = selected
+
+    # Periksa jawaban
+    if st.button("🔍 Periksa Jawaban", type="primary",
+                 use_container_width=True):
+
+        st.session_state[checked_key][nomor] = True
+
+        if selected == current["jawaban"]:
+            st.session_state[score_key] += 1
+
+    # Tampilkan pembahasan
+    if st.session_state[checked_key].get(nomor, False):
+
+        if selected == current["jawaban"]:
+            st.success("🎉 Benar! Jawaban kamu tepat.")
+        else:
+            st.error("Belum tepat. Yuk, pelajari pembahasannya!")
+
+        st.markdown(
+            f"""
+            <div class="answer-box">
+                <h3>✅ Jawaban Benar</h3>
+                <h2>{current['jawaban']}</h2>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+        st.subheader("💡 Pembahasan")
+
+        st.markdown(current["pembahasan"])
+
+    st.divider()
+
+    # Navigasi
+    col1, col2 = st.columns(2)
+
+    with col1:
+        if nomor > 0:
+            if st.button("⬅️ Soal Sebelumnya",
+                         use_container_width=True):
+                st.session_state[key] -= 1
+                st.rerun()
+
+    with col2:
+        if nomor < len(daftar_soal) - 1:
+            if st.button("Soal Berikutnya ➡️",
+                         use_container_width=True):
+                st.session_state[key] += 1
+                st.rerun()
+        else:
+            st.success("Kamu sudah menyelesaikan semua soal!")
+
+    st.divider()
+
+    st.metric(
+        "🏆 Jawaban Benar",
+        f"{st.session_state[score_key]} / {len(daftar_soal)}"
+    )
+
+    if st.button("🔄 Ulangi Materi", use_container_width=True):
+        st.session_state[key] = 0
+        st.session_state[answer_key] = {}
+        st.session_state[checked_key] = {}
+        st.session_state[score_key] = 0
+        st.rerun()
+
+# ==============================
+# FOOTER
+# ==============================
+st.divider()
+
+st.markdown(
+    "<center>© 2026 MathClass 12 | Belajar Matematika Lebih Mudah 📐</center>",
+    unsafe_allow_html=True
+)
